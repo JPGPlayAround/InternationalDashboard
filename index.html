@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IMF Fiscal Monitor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; margin: 0; background: #f7f9fc; color: #172033; }
+    header { background: #103b66; color: white; padding: 28px 36px; }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    main { padding: 24px 36px; max-width: 1200px; margin: auto; }
+    .controls, .card { background: white; border: 1px solid #dbe3ef; border-radius: 14px; padding: 18px; margin-bottom: 18px; box-shadow: 0 1px 4px rgba(16,59,102,.08); }
+    label { font-size: 13px; font-weight: 700; display:block; margin-bottom: 6px; }
+    select, input { width: 100%; padding: 10px; border: 1px solid #b9c7d8; border-radius: 10px; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; background: white; }
+    th, td { border-bottom: 1px solid #e5ebf3; padding: 9px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { background: #eef4fb; position: sticky; top: 0; }
+    .tablewrap { max-height: 430px; overflow: auto; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } main { padding: 18px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>IMF Fiscal Monitor Dashboard</h1>
+  <div>Data loaded from <b>data.csv</b></div>
+</header>
+<main>
+  <section class="controls grid">
+    <div><label for="country">Country</label><select id="country"></select></div>
+    <div><label for="metric">Metric</label><select id="metric"></select></div>
+    <div><label for="year">Year for table</label><select id="year"></select></div>
+  </section>
+  <section class="card"><canvas id="chart" height="110"></canvas></section>
+  <section class="card">
+    <h2 style="margin-top:0">Country comparison</h2>
+    <div class="tablewrap"><table id="dataTable"></table></div>
+  </section>
+</main>
+<script>
+let rows = [], chart;
+const nonMetrics = new Set(['Country','Country Code','Advanced Economy','Year']);
+const fmt = v => (v === null || v === undefined || v === '' || isNaN(Number(v))) ? '' : Number(v).toFixed(1);
+Papa.parse('data.csv', { download: true, header: true, dynamicTyping: true, complete: ({data}) => {
+  rows = data.filter(r => r.Country && r.Year);
+  const countries = [...new Set(rows.map(r => r.Country))].sort();
+  const years = [...new Set(rows.map(r => r.Year))].sort((a,b)=>b-a);
+  const metrics = Object.keys(rows[0]).filter(c => !nonMetrics.has(c));
+  country.innerHTML = countries.map(c => `<option>${c}</option>`).join('');
+  metric.innerHTML = metrics.map(m => `<option>${m}</option>`).join('');
+  year.innerHTML = years.map(y => `<option>${y}</option>`).join('');
+  country.value = countries.includes('United States') ? 'United States' : countries[0];
+  metric.value = metrics.find(m => m.includes('Gross debt')) || metrics[0];
+  update();
+}});
+[country, metric, year].forEach(el => el.addEventListener('change', update));
+function update(){
+  if(!rows.length) return;
+  const c = country.value, m = metric.value, y = year.value;
+  const series = rows.filter(r => r.Country === c && r[m] !== null && r[m] !== '').sort((a,b)=>a.Year-b.Year);
+  const labels = series.map(r => r.Year);
+  const values = series.map(r => Number(r[m]));
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById('chart'), { type:'line', data:{ labels, datasets:[{ label:`${c}: ${m}`, data:values, tension:.25 }] }, options:{ responsive:true, plugins:{ legend:{ display:true } }, scales:{ y:{ title:{display:true, text:m} } } } });
+  const tableRows = rows.filter(r => String(r.Year) === String(y)).sort((a,b)=>(Number(b[m])||-Infinity)-(Number(a[m])||-Infinity));
+  dataTable.innerHTML = `<thead><tr><th>Country</th><th>Advanced Economy</th><th>${m}</th></tr></thead><tbody>` +
+    tableRows.map(r => `<tr><td>${r.Country}</td><td>${r['Advanced Economy']}</td><td>${fmt(r[m])}</td></tr>`).join('') + `</tbody>`;
+}
+</script>
+</body>
+</html>
