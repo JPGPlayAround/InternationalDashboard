@@ -57,26 +57,124 @@
   </main>
 <script>
 const MEASURES = [
-  { label: "Net lending/borrowing (overall balance) (% of GDP)", find: ["net lending/borrowing", "overall balance"] },
-  { label: "Primary net lending/borrowing (primary balance) (% of GDP)", find: ["primary net lending/borrowing", "primary balance"] },
-  { label: "Interest (% of GDP)", find: ["interest (% of gdp)"] },
-  { label: "Expenditure, General government, Percent of GDP", find: ["expenditure", "general government", "percent of gdp"] },
-  { label: "Revenue, General government, Percent of GDP", find: ["revenue", "general government", "percent of gdp"] },
-  { label: "Gross debt, General government, Percent of GDP", find: ["gross debt", "general government", "percent of gdp"] },
-  { label: "Net debt, General government, Percent of GDP", find: ["net debt", "general government", "percent of gdp"] }
+  { label: "Net lending/borrowing (overall balance) (% of GDP)", column: "Net lending/borrowing (also referred as overall balance) (% of GDP)" },
+  { label: "Primary net lending/borrowing (primary balance) (% of GDP)", column: "Primary net lending/borrowing (also referred as primary balance) (% of GDP)" },
+  { label: "Interest (% of GDP)", column: "Interest (% of GDP)" },
+  { label: "Expenditure, General government, Percent of GDP", column: "Expenditure, General government, Percent of GDP" },
+  { label: "Revenue, General government, Percent of GDP", column: "Revenue, General government, Percent of GDP" },
+  { label: "Gross debt, General government, Percent of GDP", column: "Gross debt, General government, Percent of GDP" },
+  { label: "Net debt, General government, Percent of GDP", column: "Net debt, General government, Percent of GDP" }
 ];
+
 let rawData = [], headers = [], currentRanked = [];
+
 function norm(s){ return String(s || '').replace(/^\uFEFF/, '').toLowerCase().replace(/[^a-z0-9%]+/g,' ').trim().replace(/\s+/g,' '); }
-function findColumn(parts){ const nParts = parts.map(norm); return headers.find(h => nParts.every(p => norm(h).includes(p))) || null; }
-function getCell(row, key){ if (!key) return undefined; if (row[key] !== undefined) return row[key]; const nk = norm(key); const actual = Object.keys(row).find(k => norm(k) === nk); return actual ? row[actual] : undefined; }
-function cleanNumber(x) { if (x === null || x === undefined) return null; const s = String(x).trim().replace(/,/g, ""); if (s === "" || s.toLowerCase() === "nan" || s === "null") return null; const n = Number(s); return Number.isFinite(n) ? n : null; }
+function findExactColumn(wanted){
+  const target = norm(wanted);
+  return headers.find(h => norm(h) === target) || null;
+}
+function findRequiredColumn(wanted){
+  const exact = findExactColumn(wanted);
+  if (exact) return exact;
+  throw new Error(`Missing required CSV column: ${wanted}`);
+}
+function getCell(row, key){ return key ? row[key] : undefined; }
+function cleanNumber(x) {
+  if (x === null || x === undefined) return null;
+  const s = String(x).trim().replace(/,/g, "");
+  if (s === "" || s.toLowerCase() === "nan" || s.toLowerCase() === "null") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
 function fmt(n) { return n === null ? "—" : n.toLocaleString(undefined, {maximumFractionDigits: 1, minimumFractionDigits: 1}) + "%"; }
 function escapeHtml(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
-function initControls() { const m = document.getElementById('measureSelect'); m.innerHTML = MEASURES.map((x,i)=>`<option value="${i}">${escapeHtml(x.label)}</option>`).join(''); const years = [...new Set(rawData.map(r => cleanNumber(getCell(r, findColumn(['year'])))).filter(y => y !== null))].sort((a,b)=>b-a); document.getElementById('yearSelect').innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join(''); ['measureSelect','groupSelect','yearSelect','orderSelect','searchBox'].forEach(id => document.getElementById(id).addEventListener('input', update)); }
-function getRanked() { const measure = MEASURES[Number(document.getElementById('measureSelect').value || 0)]; const measureCol = findColumn(measure.find); const countryCol = findColumn(['country']); const codeCol = findColumn(['country code']); const groupCol = findColumn(['advanced economy']); const yearCol = findColumn(['year']); const year = Number(document.getElementById('yearSelect').value); const group = document.getElementById('groupSelect').value; const order = document.getElementById('orderSelect').value; let rows = rawData.map(r => ({ country: String(getCell(r,countryCol) || '').trim(), code: String(getCell(r,codeCol) || '').trim(), group: String(getCell(r,groupCol) || '').trim(), year: cleanNumber(getCell(r,yearCol)), value: cleanNumber(getCell(r,measureCol)) })).filter(r => r.country !== '' && r.year === year && r.value !== null); if (group === 'advanced') rows = rows.filter(r => norm(r.group) === 'advanced economy'); rows.sort((a,b) => order === 'desc' ? b.value - a.value : a.value - b.value); rows.forEach((r,i)=>r.rank=i+1); return { rows, measure, measureCol, year, group, order }; }
-function update() { const { rows, measure, measureCol, year, group, order } = getRanked(); currentRanked = rows; const us = rows.find(r => r.country === 'United States' || r.code === 'USA'); const groupText = group === 'advanced' ? 'advanced economies' : 'all countries'; const orderText = order === 'desc' ? 'highest value ranked first' : 'lowest value ranked first'; document.getElementById('valueHeader').textContent = measure.label; document.getElementById('countryCount').textContent = rows.length.toLocaleString(); document.getElementById('selectedYear').textContent = year || '—'; document.getElementById('selectedGroup').textContent = group === 'advanced' ? 'Advanced' : 'All'; document.getElementById('debugNote').textContent = measureCol ? `Using CSV column: ${measureCol}` : `Warning: could not find a matching CSV column for this measure.`; if (us) { document.getElementById('headline').innerHTML = `The United States ranks <strong>#${us.rank}</strong> in ${escapeHtml(measure.label)} among ${rows.length.toLocaleString()} ${groupText} for which data is available.`; document.getElementById('detail').textContent = `For ${year}, the U.S. value is ${fmt(us.value)}. Ranking method: ${orderText}.`; document.getElementById('usValue').textContent = fmt(us.value); } else { document.getElementById('headline').innerHTML = `No United States ranking is available for this selection.`; document.getElementById('detail').textContent = `The selected measure/year/group does not include a usable U.S. value.`; document.getElementById('usValue').textContent = '—'; } renderTable(); }
-function renderTable() { const q = document.getElementById('searchBox').value.trim().toLowerCase(); const rows = currentRanked.filter(r => !q || r.country.toLowerCase().includes(q)); document.getElementById('rankTable').innerHTML = rows.map(r => `<tr class="${r.code === 'USA' || r.country === 'United States' ? 'us' : ''}"><td class="num">${r.rank}</td><td>${escapeHtml(r.country)}</td><td><span class="pill">${escapeHtml(r.group || 'Unclassified')}</span></td><td class="num">${fmt(r.value)}</td></tr>`).join(''); }
-Papa.parse('data.csv?v=8', { download: true, header: true, skipEmptyLines: true, encoding: 'ISO-8859-1', complete: results => { rawData = results.data || []; headers = results.meta.fields || []; initControls(); update(); }, error: err => { document.getElementById('headline').innerHTML = '<span class="error">Could not load data.csv</span>'; document.getElementById('detail').textContent = err.message || String(err); }});
+
+const COLS = {};
+function initColumns(){
+  COLS.country = findRequiredColumn('Country');
+  COLS.code = findRequiredColumn('Country Code');
+  COLS.group = findRequiredColumn('Advanced Economy');
+  COLS.year = findRequiredColumn('Year');
+  MEASURES.forEach(m => m.resolvedColumn = findRequiredColumn(m.column));
+}
+
+function initControls() {
+  const m = document.getElementById('measureSelect');
+  m.innerHTML = MEASURES.map((x,i)=>`<option value="${i}">${escapeHtml(x.label)}</option>`).join('');
+  const years = [...new Set(rawData.map(r => cleanNumber(getCell(r, COLS.year))).filter(y => y !== null))].sort((a,b)=>b-a);
+  document.getElementById('yearSelect').innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  ['measureSelect','groupSelect','yearSelect','orderSelect','searchBox'].forEach(id => document.getElementById(id).addEventListener('input', update));
+}
+
+function getRanked() {
+  const measure = MEASURES[Number(document.getElementById('measureSelect').value || 0)];
+  const year = Number(document.getElementById('yearSelect').value);
+  const group = document.getElementById('groupSelect').value;
+  const order = document.getElementById('orderSelect').value;
+  let rows = rawData.map(r => ({
+    country: String(getCell(r,COLS.country) || '').trim(),
+    code: String(getCell(r,COLS.code) || '').trim(),
+    group: String(getCell(r,COLS.group) || '').trim(),
+    year: cleanNumber(getCell(r,COLS.year)),
+    value: cleanNumber(getCell(r,measure.resolvedColumn))
+  })).filter(r => r.country !== '' && r.year === year && r.value !== null);
+  if (group === 'advanced') rows = rows.filter(r => norm(r.group) === 'advanced economy');
+  rows.sort((a,b) => order === 'desc' ? b.value - a.value : a.value - b.value);
+  rows.forEach((r,i)=>r.rank=i+1);
+  return { rows, measure, year, group, order };
+}
+
+function update() {
+  const { rows, measure, year, group, order } = getRanked();
+  currentRanked = rows;
+  const us = rows.find(r => r.country === 'United States' || r.code === 'USA');
+  const groupText = group === 'advanced' ? 'advanced economies' : 'all countries';
+  const orderText = order === 'desc' ? 'highest value ranked first' : 'lowest value ranked first';
+  document.getElementById('valueHeader').textContent = measure.label;
+  document.getElementById('countryCount').textContent = rows.length.toLocaleString();
+  document.getElementById('selectedYear').textContent = year || '—';
+  document.getElementById('selectedGroup').textContent = group === 'advanced' ? 'Advanced' : 'All';
+  document.getElementById('debugNote').textContent = `Using CSV column: ${measure.resolvedColumn}`;
+  if (us) {
+    document.getElementById('headline').innerHTML = `The United States ranks <strong>#${us.rank}</strong> in ${escapeHtml(measure.label)} among ${rows.length.toLocaleString()} ${groupText} for which data is available.`;
+    document.getElementById('detail').textContent = `For ${year}, the U.S. value is ${fmt(us.value)}. Ranking method: ${orderText}.`;
+    document.getElementById('usValue').textContent = fmt(us.value);
+  } else {
+    document.getElementById('headline').innerHTML = `No United States ranking is available for this selection.`;
+    document.getElementById('detail').textContent = `The selected measure/year/group does not include a usable U.S. value.`;
+    document.getElementById('usValue').textContent = '—';
+  }
+  renderTable();
+}
+
+function renderTable() {
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const rows = currentRanked.filter(r => !q || r.country.toLowerCase().includes(q));
+  document.getElementById('rankTable').innerHTML = rows.map(r => `<tr class="${r.code === 'USA' || r.country === 'United States' ? 'us' : ''}"><td class="num">${r.rank}</td><td>${escapeHtml(r.country)}</td><td><span class="pill">${escapeHtml(r.group || 'Unclassified')}</span></td><td class="num">${fmt(r.value)}</td></tr>`).join('');
+}
+
+Papa.parse('data.csv?v=9', {
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  encoding: 'ISO-8859-1',
+  complete: results => {
+    try {
+      rawData = results.data || [];
+      headers = results.meta.fields || [];
+      initColumns();
+      initControls();
+      update();
+    } catch(e) {
+      document.getElementById('headline').innerHTML = '<span class="error">CSV column error</span>';
+      document.getElementById('detail').textContent = e.message;
+    }
+  },
+  error: err => {
+    document.getElementById('headline').innerHTML = '<span class="error">Could not load data.csv</span>';
+    document.getElementById('detail').textContent = err.message || String(err);
+  }
+});
 </script>
 </body>
 </html>
