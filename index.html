@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>International Fiscal Dashboard</title>
   <style>
-    :root{--bg:#f6f8fb;--card:#fff;--text:#172033;--muted:#667085;--line:#e4e7ec;--blue:#155eef;--blue2:#eff4ff;--green:#087443;}
+    :root{--bg:#f6f8fb;--card:#fff;--text:#172033;--muted:#667085;--line:#e4e7ec;--blue:#155eef;--blue2:#eff4ff;--green:#087443;--shadow:#10182812;}
     *{box-sizing:border-box} body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
     .wrap{max-width:1150px;margin:0 auto;padding:32px 18px 60px}.hero{margin-bottom:22px}.eyebrow{color:var(--blue);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
     h1{font-size:34px;margin:8px 0 8px;line-height:1.1}.sub{color:var(--muted);font-size:16px;max-width:760px;line-height:1.45}
-    .controls{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:14px;margin:24px 0}.control{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 1px 2px #1018280d}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0}.control{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 1px 2px #1018280d}
     label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:7px}select{width:100%;font-size:15px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--text)}
-    .rankcard{background:linear-gradient(135deg,#fff,#f5f8ff);border:1px solid #d6e0ff;border-radius:20px;padding:24px;margin:18px 0;box-shadow:0 10px 25px #10182812}.rankline{font-size:24px;font-weight:800;line-height:1.25}.rankline .num{color:var(--blue);font-size:42px}.meta{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:14px;margin-top:10px}.pill{background:var(--blue2);color:#1849a9;border-radius:999px;padding:6px 10px;font-weight:700}.value{color:var(--green);font-weight:800}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 1px 2px #1018280d}.card h2{font-size:18px;margin:0;padding:18px;border-bottom:1px solid var(--line)}
+    .measure-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0 22px}.measure-card{background:linear-gradient(135deg,#fff,#f5f8ff);border:1px solid #d6e0ff;border-radius:20px;padding:22px;box-shadow:0 10px 25px var(--shadow);cursor:pointer;text-align:left;color:var(--text);font:inherit;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}.measure-card:hover,.measure-card:focus{transform:translateY(-2px);border-color:#9db6ff;box-shadow:0 14px 28px #1018281a;outline:none}.measure-card.active{border-color:var(--blue);box-shadow:0 0 0 3px #155eef1f,0 14px 28px #1018281a}.measure-title{font-size:19px;font-weight:800;margin-bottom:8px}.measure-rank{font-size:17px;font-weight:700;line-height:1.35}.measure-value{margin-top:10px;color:var(--green);font-size:24px;font-weight:800}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}.card{display:none;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 1px 2px #1018280d}.card.visible{display:block}.card h2{font-size:18px;margin:0;padding:18px;border-bottom:1px solid var(--line)}
     table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:11px 14px;border-bottom:1px solid var(--line);text-align:left}th{background:#f9fafb;color:#475467;font-size:12px;text-transform:uppercase;letter-spacing:.04em}td.num{text-align:right;font-variant-numeric:tabular-nums}tr.us{background:#eff4ff;font-weight:800}tr:hover{background:#f9fafb}.note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.4}.error{background:#fff1f3;border:1px solid #ffcdd6;color:#9f1239;padding:16px;border-radius:14px;margin-top:20px;white-space:pre-wrap}
-    @media(max-width:850px){.controls{grid-template-columns:1fr}.rankline{font-size:20px}.rankline .num{font-size:34px}table{font-size:12px}th,td{padding:9px}}
+    @media(max-width:850px){.controls,.measure-grid{grid-template-columns:1fr}.measure-title{font-size:18px}.measure-rank{font-size:16px}.measure-value{font-size:22px}table{font-size:12px}th,td{padding:9px}}
   </style>
 </head>
 <body>
@@ -25,13 +25,11 @@
       <div class="sub">Compare the United States with other countries using selected fiscal measures. Rankings only include countries with nonblank country names and available numeric data for the selected measure.</div>
     </section>
     <section class="controls">
-      <div class="control"><label for="measure">Measure</label><select id="measure"></select></div>
       <div class="control"><label for="year">Year</label><select id="year"></select></div>
-      <div class="control"><label for="group">Country group</label><select id="group"><option value="all">All countries</option><option value="advanced">Advanced economies only</option></select></div>
-      <div class="control"><label for="order">Ranking direction</label><select id="order"><option value="desc">Highest value ranks #1</option><option value="asc">Lowest value ranks #1</option></select></div>
+      <div class="control"><label for="group">Country group</label><select id="group"><option value="advanced">Advanced economies only</option><option value="all">All countries</option></select></div>
     </section>
-    <section id="rankcard" class="rankcard"></section>
-    <section class="grid"><div class="card"><h2>Country rankings</h2><div style="overflow:auto"><table><thead><tr><th>Rank</th><th>Country</th><th>Code</th><th>Group</th><th id="valueHeader">Value</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
+    <section id="measureGrid" class="measure-grid"></section>
+    <section class="grid"><div id="rankingsCard" class="card"><h2 id="tableTitle"></h2><div style="overflow:auto"><table><thead><tr><th>Rank</th><th>Country</th><th>Code</th><th>Group</th><th id="valueHeader">Value</th></tr></thead><tbody id="tbody"></tbody></table></div></div></section>
     <div class="note">Source: User-provided CSV from IMF Fiscal Monitor pull. Values shown as percent of GDP where indicated.</div>
     <div id="error"></div>
   </main>
@@ -43,13 +41,13 @@ const EXACT = {
   year: 'Year'
 };
 const MEASURES = [
-  'Net lending/borrowing (also referred as overall balance) (% of GDP)',
-  'Primary net lending/borrowing (also referred as primary balance) (% of GDP)',
-  'Interest (% of GDP)',
-  'Expenditure, General government, Percent of GDP',
-  'Revenue, General government, Percent of GDP',
-  'Gross debt, General government, Percent of GDP',
-  'Net debt, General government, Percent of GDP'
+  {label:'Overall Balance', column:'Net lending/borrowing (also referred as overall balance) (% of GDP)', direction:'asc'},
+  {label:'Primary Balance', column:'Primary net lending/borrowing (also referred as primary balance) (% of GDP)', direction:'asc'},
+  {label:'Interest', column:'Interest (% of GDP)', direction:'asc'},
+  {label:'Expenditure', column:'Expenditure, General government, Percent of GDP', direction:'desc'},
+  {label:'Revenue', column:'Revenue, General government, Percent of GDP', direction:'desc'},
+  {label:'Gross Debt', column:'Gross debt, General government, Percent of GDP', direction:'desc'},
+  {label:'Net Debt', column:'Net debt, General government, Percent of GDP', direction:'desc'}
 ];
 function parseCSV(text){
   const rows=[]; let row=[], cur='', q=false;
@@ -75,25 +73,53 @@ function num(v){
   return Number(s);
 }
 function isUS(r){ return (r[EXACT.country]||'').trim()==='United States' || (r[EXACT.code]||'').trim().toUpperCase()==='USA'; }
-function fmt(x){ return Number.isFinite(x) ? x.toLocaleString(undefined,{maximumFractionDigits:2, minimumFractionDigits: x%1===0 ? 0 : 1}) : '—'; }
+function fmt(x){ return Number.isFinite(x) ? x.toLocaleString(undefined,{maximumFractionDigits:1, minimumFractionDigits:1}) : '—'; }
 function ordinal(n){ const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+function escapeHTML(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function scopeLabel(group){ return group==='advanced' ? 'Advanced Economies' : 'Countries'; }
 let data=[];
-function render(){
-  const m=document.getElementById('measure').value, y=document.getElementById('year').value, group=document.getElementById('group').value, order=document.getElementById('order').value;
-  let rows=data.filter(r => (r[EXACT.country]||'').trim() !== '' && String(r[EXACT.year]) === String(y) && Number.isFinite(num(r[m])));
+let activeMeasure=null;
+function rankedRows(measure){
+  const y=document.getElementById('year').value;
+  const group=document.getElementById('group').value;
+  let rows=data.filter(r => (r[EXACT.country]||'').trim() !== '' && String(r[EXACT.year]) === String(y) && Number.isFinite(num(r[measure.column])));
   if(group==='advanced') rows=rows.filter(r => String(r[EXACT.advanced]||'').toLowerCase().includes('advanced') && !String(r[EXACT.advanced]||'').toLowerCase().includes('not advanced'));
-  rows.sort((a,b)=> order==='desc' ? num(b[m])-num(a[m]) : num(a[m])-num(b[m]));
+  rows.sort((a,b)=> measure.direction==='desc' ? num(b[measure.column])-num(a[measure.column]) : num(a[measure.column])-num(b[measure.column]));
   rows.forEach((r,i)=>r._rank=i+1);
-  const us=rows.find(isUS);
-  const scope=group==='advanced'?'advanced economies':'countries';
-  const rankcard=document.getElementById('rankcard');
-  if(us){
-    rankcard.innerHTML=`<div class="rankline">The United States ranks <span class="num">#${us._rank}</span> in ${m} among ${rows.length} ${scope} with available data.</div><div class="meta"><span class="pill">Year: ${y}</span><span class="pill">U.S. value: <span class="value">${fmt(num(us[m]))}</span></span><span class="pill">${order==='desc'?'Highest':'Lowest'} ranks #1</span></div>`;
-  } else {
-    rankcard.innerHTML=`<div class="rankline">United States data was not available for ${m} in ${y} under the selected filter.</div><div class="meta"><span class="pill">${rows.length} ${scope} with available data</span></div>`;
+  return rows;
+}
+function renderMeasureCards(){
+  const group=document.getElementById('group').value;
+  const scope=scopeLabel(group);
+  document.getElementById('measureGrid').innerHTML=MEASURES.map((m,idx)=>{
+    const rows=rankedRows(m);
+    const us=rows.find(isUS);
+    const rank=us ? us._rank : '—';
+    const value=us ? fmt(num(us[m.column])) : '—';
+    return `<button type="button" class="measure-card${activeMeasure===idx?' active':''}" data-measure-index="${idx}"><div class="measure-title">${escapeHTML(m.label)}</div><div class="measure-rank">U.S. Ranks ${rank} out of ${rows.length} ${scope}</div><div class="measure-value">${value}% of GDP</div></button>`;
+  }).join('');
+  document.querySelectorAll('.measure-card').forEach(card=>card.addEventListener('click',()=>{
+    activeMeasure=Number(card.dataset.measureIndex);
+    render();
+  }));
+}
+function renderTable(){
+  const card=document.getElementById('rankingsCard');
+  if(activeMeasure===null){
+    card.classList.remove('visible');
+    document.getElementById('tbody').innerHTML='';
+    return;
   }
-  document.getElementById('valueHeader').textContent=m;
-  document.getElementById('tbody').innerHTML=rows.map(r=>`<tr class="${isUS(r)?'us':''}"><td>${ordinal(r._rank)}</td><td>${r[EXACT.country]}</td><td>${r[EXACT.code]||''}</td><td>${r[EXACT.advanced]||''}</td><td class="num">${fmt(num(r[m]))}</td></tr>`).join('');
+  const m=MEASURES[activeMeasure];
+  const rows=rankedRows(m);
+  card.classList.add('visible');
+  document.getElementById('tableTitle').textContent=m.label;
+  document.getElementById('valueHeader').textContent=m.label + ' (% of GDP)';
+  document.getElementById('tbody').innerHTML=rows.map(r=>`<tr class="${isUS(r)?'us':''}"><td>${ordinal(r._rank)}</td><td>${escapeHTML(r[EXACT.country])}</td><td>${escapeHTML(r[EXACT.code]||'')}</td><td>${escapeHTML(r[EXACT.advanced]||'')}</td><td class="num">${fmt(num(r[m.column]))}</td></tr>`).join('');
+}
+function render(){
+  renderMeasureCards();
+  renderTable();
 }
 async function init(){
   try{
@@ -102,13 +128,11 @@ async function init(){
     const text=new TextDecoder('windows-1252').decode(buf);
     data=parseCSV(text);
     const headers=Object.keys(data[0]||{});
-    const missing=[...Object.values(EXACT), ...MEASURES].filter(h=>!headers.includes(h));
+    const missing=[...Object.values(EXACT), ...MEASURES.map(m=>m.column)].filter(h=>!headers.includes(h));
     if(missing.length) throw new Error('Missing expected CSV columns:\n' + missing.join('\n') + '\n\nDetected columns:\n' + headers.join('\n'));
-    const measure=document.getElementById('measure');
-    measure.innerHTML=MEASURES.map(x=>`<option value="${x}">${x}</option>`).join('');
     const years=[...new Set(data.map(r=>r[EXACT.year]).filter(Boolean))].sort((a,b)=>Number(b)-Number(a));
-    document.getElementById('year').innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
-    ['measure','year','group','order'].forEach(id=>document.getElementById(id).addEventListener('change',render));
+    document.getElementById('year').innerHTML=years.map(y=>`<option value="${escapeHTML(y)}">${escapeHTML(y)}</option>`).join('');
+    ['year','group'].forEach(id=>document.getElementById(id).addEventListener('change',render));
     render();
   } catch(e){ document.getElementById('error').className='error'; document.getElementById('error').textContent='CSV/page error:\n' + e.message; }
 }
